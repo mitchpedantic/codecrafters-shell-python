@@ -14,7 +14,7 @@ def look_up(executable : str) -> Optional[str]:
     for directory in os.environ['PATH'].split(':'):
         if not os.path.exists(directory) : continue
         for item in os.listdir(directory):
-            if os.path.isfile(item) and item == executable:
+            if os.access(os.path.join(directory, item), os.X_OK) and item == executable:
                 return directory
             ...
         ...
@@ -39,7 +39,7 @@ def do_type(line : str) -> int:
             location : str = look_up(type_of) 
             if location:
                 stdout.write(
-                    "%s is %s" % type_of, location
+                    "%s is %s" % (type_of, location)
                 )
             else:
                 stdout.write(
