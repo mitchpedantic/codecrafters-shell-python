@@ -1,9 +1,10 @@
+from __future__ import annotations
+from typing import (NoReturn)
 import sys
 
 
-def main():
-    # TODO: Uncomment the code below to pass the first stage
-    # sys.stdout.write("$ ")
+def main() -> NoReturn:
+    sys.stdout.write("$ ")
     pass
 
 
