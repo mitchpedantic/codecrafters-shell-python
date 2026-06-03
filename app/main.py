@@ -9,6 +9,9 @@ from typing import (NoReturn, Callable)
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
+    TYPE = "type"
+
+def do_exit(_ : str) -> int: return -1
 
 def do_echo(line : str) -> int:
     stdout.write(
@@ -16,23 +19,37 @@ def do_echo(line : str) -> int:
     )
     return 0
 
+def do_type(line : str) -> int:
+    if len(line.split()) > 1:
+        type_of : str = line.split()[1]
+        if type_of in BuiltIn.__members__.values():
+            stdout.write(
+                 "%s is a shell builtin" % type_of
+            )
+        else:
+            stdout.write(
+                 "%s: not found" % type_of
+            )
+    stdout.write("\n")
+    return 0
+    
 def do_run(line : str) -> int:
     stderr.write("%s: command not found\n" % line)
     return 0
 
-def do_exit(_ : str) -> int: return -1
 
 def do_(request : BuiltIn) -> Callable[[str], int]:
     return {
         BuiltIn.EXIT : do_exit,
         BuiltIn.ECHO : do_echo,
+        BuiltIn.TYPE : do_type,
     }.get(request, do_run)
 
 def read() -> int:
     stdout.write("$ ")
     try:
         line : str = input()
-        return do_(line.split(' ')[0])(line)
+        return do_(line.split()[0])(line)
     except (EOFError, KeyboardInterrupt) as _:
         stdout.write("\n")
         return -1
