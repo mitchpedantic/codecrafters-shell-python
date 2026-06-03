@@ -6,6 +6,8 @@ import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
 
+__old_pwd__ : str = None
+
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
@@ -54,12 +56,34 @@ def do_type(line : str) -> int:
 
 def do_pwd(_ : str) -> int:
     stdout.write(
-        os.curdir
+        os.getcwd() + "\n"
     )
     return 0
 
+def do_cd(line : str) -> int:
+    global __old_pwd__
+    ...
+    args : list[str] = line.split()
+    new_dir : str = None
+    if len(args) == 1 or args[1] == "~":
+        new_dir = os.environ["HOME"]
+    elif args[1] == "-":
+        new_dir = __old_pwd__
+        if new_dir is None:
+            stderr.write("Old PWD not set\n" )
+            return 0
+    else:
+        new_dir = args[1]
+    try:
+        tmp = os.getcwd()
+        os.chdir(new_dir)
+        __old_pwd__ = tmp
+    except FileNotFoundError as _:
+        stderr.write("%s: No such file or directory\n" % args[1])
+    return 0
+
 def do_run(line : str) -> int:
-    args = line.split()
+    args : list[str] = line.split()
     if look_up(args[0]) is not None:
         subprocess.run(args)
     else:
