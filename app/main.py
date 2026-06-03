@@ -1,22 +1,37 @@
 from __future__ import annotations
 import sys
 
-from typing import (NoReturn)
-from sys import (stdout, stderr)
+import enum
 
-def body() -> int:
+from sys import (stdout, stderr)
+from typing import (NoReturn, Callable)
+
+class BuiltIn(str, enum.Enum):
+    EXIT = "exit"
+
+def do_run(line : str) -> int:
+    stderr.write("%s: command not found\n" % line)
+    return 0
+
+def do_exit(_ : str) -> int: return -1
+
+def do_(request : BuiltIn) -> Callable[[str], int]:
+    return {
+        BuiltIn.EXIT : do_exit,        
+    }.get(request, do_run)
+
+def read() -> int:
     stdout.write("$ ")
 
     try:
         line : str = input()
+        return do_(line.split(' ')[0])(line)
     except EOFError as _:
         return -1
-    
-    stderr.write("%s: command not found\n" % line)
-    return 0
+    ...
 
 def main() -> NoReturn:
-    while (0 == body()):
+    while (0 == read()):
         ...
     pass
 
