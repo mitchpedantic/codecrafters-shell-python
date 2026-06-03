@@ -14,8 +14,9 @@ def look_up(executable : str) -> Optional[str]:
     for directory in os.environ['PATH'].split(':'):
         if not os.path.exists(directory) : continue
         for item in os.listdir(directory):
-            if os.access(os.path.join(directory, item), os.X_OK) and item == executable:
-                return directory
+            full_path : str = os.path.join(directory, item)
+            if os.access(full_path, os.X_OK) and item == executable:
+                return full_path
             ...
         ...
     return None
