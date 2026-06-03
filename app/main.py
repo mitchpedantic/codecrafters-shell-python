@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import enum
+import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
 
@@ -50,7 +51,11 @@ def do_type(line : str) -> int:
     return 0
     
 def do_run(line : str) -> int:
-    stderr.write("%s: command not found\n" % line)
+    args = line.split()
+    if look_up(args[0]) is not None:
+        subprocess.run(args)
+    else:
+        stderr.write("%s: command not found\n" % line)
     return 0
 
 
@@ -65,7 +70,8 @@ def read() -> int:
     stdout.write("$ ")
     try:
         line : str = input()
-        return do_(line.split()[0])(line)
+        return\
+            do_(line.split()[0])(line) if len(line) != 0 else 0
     except (EOFError, KeyboardInterrupt) as _:
         stdout.write("\n")
         return -1
