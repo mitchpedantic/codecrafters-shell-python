@@ -10,6 +10,8 @@ class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
     TYPE = "type"
+    PWD = "pwd"
+    CD = "cd"
 
 def look_up(executable : str) -> Optional[str]:
     for directory in os.environ['PATH'].split(':'):
@@ -49,7 +51,13 @@ def do_type(line : str) -> int:
                 )
     stdout.write("\n")
     return 0
-    
+
+def do_pwd(_ : str) -> int:
+    stdout.write(
+        os.curdir
+    )
+    return 0
+
 def do_run(line : str) -> int:
     args = line.split()
     if look_up(args[0]) is not None:
@@ -64,6 +72,9 @@ def do_(request : BuiltIn) -> Callable[[str], int]:
         BuiltIn.EXIT : do_exit,
         BuiltIn.ECHO : do_echo,
         BuiltIn.TYPE : do_type,
+        BuiltIn.PWD  : do_pwd,
+        BuiltIn.CD   : do_cd,
+
     }.get(request, do_run)
 
 def read() -> int:
