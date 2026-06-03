@@ -1,15 +1,24 @@
 from __future__ import annotations
-import sys
 
+import os
 import enum
-from string import (whitespace)
 from sys import (stdout, stderr)
-from typing import (NoReturn, Callable)
+from typing import (NoReturn, Callable, Optional)
 
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
     TYPE = "type"
+
+def look_up(executable : str) -> Optional[str]:
+    for directory in os.environ['PATH'].split(':'):
+        if not os.path.exists(directory) : continue
+        for item in os.listdir(directory):
+            if os.path.isfile(item) and item == executable:
+                return directory
+            ...
+        ...
+    return None
 
 def do_exit(_ : str) -> int: return -1
 
@@ -27,9 +36,15 @@ def do_type(line : str) -> int:
                  "%s is a shell builtin" % type_of
             )
         else:
-            stdout.write(
-                 "%s: not found" % type_of
-            )
+            location : str = look_up(type_of) 
+            if location:
+                stdout.write(
+                    "%s is %s" % type_of, location
+                )
+            else:
+                stdout.write(
+                     "%s: not found" % type_of
+                )
     stdout.write("\n")
     return 0
     
