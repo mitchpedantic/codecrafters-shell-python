@@ -26,17 +26,17 @@ def look_up(executable : str) -> Optional[str]:
         ...
     return None
 
-def do_exit(_ : str) -> int: return -1
+def do_exit(*args) -> int: return -1
 
-def do_echo(line : str) -> int:
+def do_echo(_ : str, *args : list[str]) -> int:
     stdout.write(
-        " ".join(line.split()[1:]) + "\n"
+        " ".join(args) + "\n"
     )
     return 0
 
-def do_type(line : str) -> int:
-    if len(line.split()) > 1:
-        type_of : str = line.split()[1]
+def do_type(_ : str, *args : list[str]) -> int:
+    if len(args) > 0:
+        type_of : str = args[0]
         if type_of in BuiltIn.__members__.values():
             stdout.write(
                  "%s is a shell builtin" % type_of
@@ -54,40 +54,38 @@ def do_type(line : str) -> int:
     stdout.write("\n")
     return 0
 
-def do_pwd(_ : str) -> int:
+def do_pwd(*args : list[str]) -> int:
     stdout.write(
         os.getcwd() + "\n"
     )
     return 0
 
-def do_cd(line : str) -> int:
+def do_cd(_ : str, *args : list[str]) -> int:
     global __old_pwd__
     ...
-    args : list[str] = line.split()
     new_dir : str = None
-    if len(args) == 1 or args[1] == "~":
+    if len(args) == 0 or args[0] == "~":
         new_dir = os.environ["HOME"]
-    elif args[1] == "-":
+    elif args[0] == "-":
         new_dir = __old_pwd__
         if new_dir is None:
             stderr.write("Old PWD not set\n" )
             return 0
     else:
-        new_dir = args[1]
+        new_dir = args[0]
     try:
         tmp = os.getcwd()
         os.chdir(new_dir)
         __old_pwd__ = tmp
     except FileNotFoundError as _:
-        stderr.write("%s: No such file or directory\n" % args[1])
+        stderr.write("%s: No such file or directory\n" % args[0])
     return 0
 
-def do_run(line : str) -> int:
-    args : list[str] = line.split()
-    if look_up(args[0]) is not None:
+def do_run(cmd : str, *args : list[str]) -> int:
+    if look_up(cmd) is not None:
         subprocess.run(args)
     else:
-        stderr.write("%s: command not found\n" % line)
+        stderr.write("%s: command not found\n" % cmd)
     return 0
 
 
@@ -101,12 +99,37 @@ def do_(request : BuiltIn) -> Callable[[str], int]:
 
     }.get(request, do_run)
 
+def split_args(line : str) -> list[str]:
+    args_list : list[str] = []
+    while True:
+        squote_index : int = line.find('\"')
+        dquote_index : int = line.find('\'')
+        if (squote_index == -1) and (dquote_index == -1):
+            args_list.extend(line.split())
+            return args_list
+        ...
+        separator : str =  '\'' if squote_index < dquote_index else '\"'
+        ...
+        line = line.replace(separator*2, "")
+        if line.find(separator, 1) == -1:
+            continue
+        lower, upper = line.split(separator, 1)
+        args_list += [s for s in lower.split() if len(s) > 0]
+        ...
+        if upper.find(separator) != -1:
+            lower, upper = upper.split(separator, 1)
+            args_list.append(lower)
+        ...
+        line = upper
+
+    
 def read() -> int:
     stdout.write("$ ")
     try:
         line : str = input()
+        args = split_args(line)
         return\
-            do_(line.split()[0])(line) if len(line) != 0 else 0
+            do_(args[0])(*args) if len(args) != 0 else 0
     except (EOFError, KeyboardInterrupt) as _:
         stdout.write("\n")
         return -1
