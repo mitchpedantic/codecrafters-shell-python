@@ -101,6 +101,7 @@ def do_(request : BuiltIn) -> Callable[[str], int]:
 
 def split_args(line : str) -> list[str]:
     args_list : list[str] = []
+    no_space : bool = False
     while True:
         squote_index : int = line.find('\"')
         dquote_index : int = line.find('\'')
@@ -114,13 +115,19 @@ def split_args(line : str) -> list[str]:
         if line.find(separator, 1) == -1:
             continue
         lower, upper = line.split(separator, 1)
-        args_list += [s for s in lower.split() if len(s) > 0]
+        if no_space:
+            splits = lower.split()
+            args_list[-1] += splits[0]
+            args_list += splits[1:]
+        else:
+            args_list += lower.split()
         ...
         if upper.find(separator) != -1:
             lower, upper = upper.split(separator, 1)
             args_list.append(lower)
         ...
         line = upper
+        if line.find(" ") !=0: no_space = True
 
     
 def read() -> int:
