@@ -120,7 +120,6 @@ def split_args(line : str) -> list[str]:
         current += c
         ...
     args.append(current)
-    print(args)
     return args
 
 def read() -> int:
