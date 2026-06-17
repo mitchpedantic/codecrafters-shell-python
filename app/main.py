@@ -81,7 +81,8 @@ def do_cd(_ : str, *args : list[str]) -> int:
         stderr.write("%s: No such file or directory\n" % args[0])
     return 0
 
-def do_run(cmd : str, *args : list[str]) -> int:
+def do_run(*args : list[str]) -> int:
+    cmd : str = args[0]
     if look_up(cmd) is not None:
         subprocess.run(args)
     else:
