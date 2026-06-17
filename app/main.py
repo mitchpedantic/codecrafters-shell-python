@@ -100,36 +100,29 @@ def do_(request : BuiltIn) -> Callable[[str], int]:
     }.get(request, do_run)
 
 def split_args(line : str) -> list[str]:
-    args_list : list[str] = []
-    no_space : bool = False
-    while True:
-        squote_index : int = line.find('\"')
-        dquote_index : int = line.find('\'')
-        if (squote_index == -1) and (dquote_index == -1):
-            args_list.extend(line.split())
-            return args_list
-        ...
-        separator : str =  '\'' if squote_index < dquote_index else '\"'
-        ...
-        line = line.replace(separator*2, "")
-        if line.find(separator, 1) == -1:
+    # uses an algorithm similar to Dijkistra's two stacks
+    args : list[str] = []
+    current = ""
+    quoted, mark = False, None
+    for c in line.rstrip():
+        if not quoted:
+            if (c == '"' or c == "'"):
+                quoted, mark = True, c
+                continue
+            if c == " " and len(current) > 0:
+                args.append(current)
+                current = ""
+                continue
+            ...
+        elif quoted and c == mark:
+            quoted, mark = False, None
             continue
-        lower, upper = line.split(separator, 1)
-        if no_space:
-            splits = lower.split()
-            args_list[-1] += splits[0]
-            args_list += splits[1:]
-        else:
-            args_list += lower.split()
+        current += c
         ...
-        if upper.find(separator) != -1:
-            lower, upper = upper.split(separator, 1)
-            args_list.append(lower)
-        ...
-        line = upper
-        if line.find(" ") !=0: no_space = True
+    args.append(current)
+    print(args)
+    return args
 
-    
 def read() -> int:
     stdout.write("$ ")
     try:
