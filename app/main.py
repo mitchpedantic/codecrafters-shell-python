@@ -107,7 +107,6 @@ def split_args(line : str) -> list[str]:
     quoted, mark = False, None
     escape = False
     for c in line.rstrip():
-        print(c)
         if c == "\\" and not escape:
             escape = True
             continue
@@ -128,7 +127,6 @@ def split_args(line : str) -> list[str]:
         else:
             escape = False
         current += c
-        print(current)
         ...
     args.append(current)
     return args
