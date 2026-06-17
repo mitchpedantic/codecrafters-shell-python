@@ -105,9 +105,13 @@ def split_args(line : str) -> list[str]:
     args : list[str] = []
     current = ""
     quoted, mark = False, None
+    escape = False
     for c in line.rstrip():
-        if not quoted:
-            if (c == '"' or c == "'" or c == "\\"):
+        if c == "\\":
+            escape = True
+            continue
+        elif not quoted and not escape:
+            if c == '"' or c == "'":
                 quoted, mark = True, c
                 continue
             if c == " ":
@@ -116,14 +120,12 @@ def split_args(line : str) -> list[str]:
                     current = ""
                 continue
             ...
-        elif quoted:
-            if mark == "\\":
-                current += c
-                quoted, mark = False, None
-                continue
+        elif quoted and not escape:
             if c == mark:
                 quoted, mark = False, None
                 continue
+        else:
+            escape = False
         current += c
         ...
     args.append(current)
