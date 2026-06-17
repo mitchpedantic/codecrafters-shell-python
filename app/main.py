@@ -109,9 +109,10 @@ def split_args(line : str) -> list[str]:
             if (c == '"' or c == "'"):
                 quoted, mark = True, c
                 continue
-            if c == " " and len(current) > 0:
-                args.append(current)
-                current = ""
+            if c == " ":
+                if len(current) > 0:
+                    args.append(current)
+                    current = ""
                 continue
             ...
         elif quoted and c == mark:
