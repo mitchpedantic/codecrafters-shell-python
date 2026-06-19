@@ -107,7 +107,7 @@ def split_args(line : str) -> list[str]:
     quoted, mark = False, None
     escape = False
     for c in line.rstrip():
-        if c == "\\" and (not quoted or mark == '"'):
+        if c == "\\" and (not quoted or mark == '"') and not escape:
             escape = True
             continue
         elif not quoted and not escape:
