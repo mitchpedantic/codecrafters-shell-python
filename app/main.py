@@ -18,7 +18,7 @@ class BuiltIn(str, enum.Enum):
 
 def write_redirect(message : str) -> NoReturn:
     if redirected:
-        with os.open(redirected, "w+") as f:
+        with open(redirected, "w+") as f:
             os.write(f, message)
     else:
         stdout.write(
