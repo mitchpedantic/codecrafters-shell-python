@@ -7,6 +7,7 @@ from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
 
 __old_pwd__ : str = None
+redirected : Optional[str] = None
 
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
@@ -14,6 +15,15 @@ class BuiltIn(str, enum.Enum):
     TYPE = "type"
     PWD = "pwd"
     CD = "cd"
+
+def write_redirect(message : str) -> NoReturn:
+    if redirected:
+        with os.open(redirected, "w+") as f:
+            os.write(f, message)
+    else:
+        write_redirect(
+            message
+        )
 
 def look_up(executable : str) -> Optional[str]:
     for directory in os.environ['PATH'].split(':'):
@@ -29,7 +39,7 @@ def look_up(executable : str) -> Optional[str]:
 def do_exit(*args) -> int: return -1
 
 def do_echo(_ : str, *args : list[str]) -> int:
-    stdout.write(
+    write_redirect(
         " ".join(args) + "\n"
     )
     return 0
@@ -38,24 +48,24 @@ def do_type(_ : str, *args : list[str]) -> int:
     if len(args) > 0:
         type_of : str = args[0]
         if type_of in BuiltIn.__members__.values():
-            stdout.write(
+            write_redirect(
                  "%s is a shell builtin" % type_of
             )
         else:
             location : str = look_up(type_of) 
             if location:
-                stdout.write(
+                write_redirect(
                     "%s is %s" % (type_of, location)
                 )
             else:
-                stdout.write(
+                write_redirect(
                      "%s: not found" % type_of
                 )
-    stdout.write("\n")
+    write_redirect("\n")
     return 0
 
 def do_pwd(*args : list[str]) -> int:
-    stdout.write(
+    write_redirect(
         os.getcwd() + "\n"
     )
     return 0
@@ -100,12 +110,15 @@ def do_(request : BuiltIn) -> Callable[[str], int]:
 
     }.get(request, do_run)
 
-def split_args(line : str) -> list[str]:
+def split_args(line : str) -> tuple[list[str], Optional[str]]:
     # uses an algorithm similar to Dijkistra's two stacks
     args : list[str] = []
     current = ""
     quoted, mark = False, None
     escape = False
+    redirect = True
+    new_output = None
+    ...
     for c in line.rstrip():
         if c == "\\" and (not quoted or mark == '"') and not escape:
             escape = True
@@ -126,20 +139,29 @@ def split_args(line : str) -> list[str]:
                 continue
         else:
             escape = False
+        ...
+        if c == ">" and not (quoted or escape):
+            redirect = True
+            continue
+        ...
         current += c
         ...
-    args.append(current)
-    return args
+    if not redirect:
+        args.append(current)
+    else:
+        new_output = current
+    return args, new_output
 
 def read() -> int:
-    stdout.write("$ ")
+    write_redirect("$ ")
     try:
         line : str = input()
-        args = split_args(line)
+        global redirected
+        args, redirected = split_args(line)
         return\
             do_(args[0])(*args) if len(args) != 0 else 0
     except (EOFError, KeyboardInterrupt) as _:
-        stdout.write("\n")
+        write_redirect("\n")
         return -1
     ...
 
