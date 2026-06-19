@@ -17,7 +17,6 @@ class BuiltIn(str, enum.Enum):
     CD = "cd"
 
 def write_redirect(message : str) -> NoReturn:
-    print("ok")
     if redirected:
         with open(redirected, "w+") as f:
             f.write(message)
