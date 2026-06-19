@@ -17,6 +17,7 @@ class BuiltIn(str, enum.Enum):
     CD = "cd"
 
 def write_redirect(message : str) -> NoReturn:
+    print("ok")
     if redirected:
         with open(redirected, "w+") as f:
             f.write(message)
@@ -154,15 +155,17 @@ def split_args(line : str) -> tuple[list[str], Optional[str]]:
 
 def read() -> int:
     write_redirect("$ ")
+    global redirected
     try:
         line : str = input()
-        global redirected
         args, redirected = split_args(line)
         return\
             do_(args[0])(*args) if len(args) != 0 else 0
     except (EOFError, KeyboardInterrupt) as _:
         write_redirect("\n")
         return -1
+    finally:
+        redirected = None
     ...
 
 def main() -> NoReturn:
