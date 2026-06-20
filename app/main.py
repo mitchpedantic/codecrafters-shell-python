@@ -5,7 +5,7 @@ import enum
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
-from module import (get_expansion, Expansion, SyntaxError)
+from .module import (get_expansion, Expansion, SyntaxError)
 
 __old_pwd__ : str = None
 redirected : Optional[str] = None
