@@ -1,4 +1,5 @@
 from __future__ import annotations
+import enum
 from typing import (Optional, NoReturn, override)
 
 class SyntaxError(Exception): ...
@@ -12,7 +13,7 @@ def get_expansion(line : str) -> Expansion:
     ...
     expansion = Expansion(
         splitter.args,
-        splitter.access_redir,
+        splitter.policy_redir,
         splitter.file_redir
     )
     ...
@@ -24,19 +25,37 @@ class Expansion:
     @property
     def arguments(self) -> list[str]: return self._arguments
     @property
-    def file(self) -> str: return self._file
+    def stdout_to(self) -> str: return self._stdout_to
+    @property
+    def stderr_to(self) -> str: return self._stderr_to
     @property
     def access(self) -> str: return self._access
     ...
     def __init__(self,
                  args : list[str],
-                 redirection : Optional[str],
+                 redirection : Optional[RedirectionPolicy],
                  destination : Optional[str]):
         self._command : Optional[str] = args[0] if len(args) > 0 else None
         self._arguments : list[str] = args[1:]
-        self._access = redirection
-        self._file = destination
+        self._access : Optional[str] = None
+        if redirection is RedirectionPolicy.STDOUT_APPEND:
+            self._access = "a"
+        elif redirection is RedirectionPolicy.STDERR_WRITE or\
+             redirection is RedirectionPolicy.STDOUT_WRITE:
+            self._access = "w+"
+        self._stderr_to : Optional[str] = None
+        self._stdout_to : Optional[str] = None
+        if redirection is RedirectionPolicy.STDERR_WRITE:
+            self._stderr_to = destination
+        else:
+            self._stdout_to = destination
         pass
+
+class RedirectionPolicy(enum.Enum):
+    STDOUT_WRITE = enum.auto()
+    STDOUT_APPEND = enum.auto()
+    STDERR_WRITE = enum.auto()
+    ...
 
 class Ctx:
     _handler : Handler = None
@@ -44,13 +63,13 @@ class Ctx:
     @property
     def args(self) -> list[str]: return self._args 
     @property
-    def access_redir(self) -> Optional[str]: return self._access_redir 
+    def policy_redir(self) -> Optional[RedirectionPolicy]: return self._policy_redir 
     @property
     def file_redir(self) -> Optional[str]: return self._file_redir
     ...
     def __init__(self):
         self._args : list[str] = []
-        self._access_redir : Optional[str] = None
+        self._policy_redir : Optional[RedirectionPolicy] = None
         self._file_redir : Optional[str] = None
         self.to(BaseHandler())
         pass
@@ -115,21 +134,23 @@ class BaseHandler(Handler):
                 if c == '\\': return
                 ...
                 if c == '>' and self.last == '>':
-                    self.ctx._access_redir = "a"
+                    self.ctx._policy_redir = RedirectionPolicy.STDOUT_APPEND
                     return
                     ... # redirection
                 elif c == '>':
-                    if self._last != ' ' and\
-                        self._last != '1':
-                        raise SyntaxError("syntax error near unexpected token `newline`\n")
                     self.arg = '' # necessary to handle the case of '1>'
-                    self.ctx._access_redir = "w+"
+                    if self._last != ' ' or self._last != '1':
+                        self.ctx._policy_redir = RedirectionPolicy.STDOUT_WRITE
+                    elif self._last != '2':
+                        self.ctx._policy_redir = RedirectionPolicy.STDERR_WRITE
+                    else:
+                        raise SyntaxError("syntax error near unexpected token `newline`\n")
                     return
                     ... # redirection
                 ...
                 if c == ' ':
                     if len(self.arg) > 0:
-                        if self.ctx.access_redir and not self.ctx.file_redir:
+                        if self.ctx.policy_redir and not self.ctx.file_redir:
                             self.ctx._file_redir = self.arg
                         else:
                             self.ctx.args.append(self.arg)

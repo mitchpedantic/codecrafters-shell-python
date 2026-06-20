@@ -36,15 +36,19 @@ class Shell:
     def _write(self,
                message : str,
                exp : Expansion = None) -> NoReturn:
-        if exp and exp.file:
-            with open(exp.file, exp.access) as f: f.write(message)
+        if exp and exp.stdout_to:
+            with open(exp.stdout_to, exp.access) as f: f.write(message)
         else:
             stdout.write(message)
         pass
     ...
     def _error(self,
-               message : str) -> NoReturn:
-        stderr.write(message)
+               message : str,
+               exp : Expansion = None) -> NoReturn:
+        if exp and exp.stderr_to:
+            with open(exp.stderr_to, exp.access) as f: f.write(message)
+        else:
+            stderr.write(message)
         pass
     ...
     def _look_up(self,
@@ -103,7 +107,7 @@ class Shell:
         elif exp.arguments[0] == "-":
             new_dir = self._old_pwd
             if new_dir is None:
-                self._error("Old PWD not set\n" )
+                self._error("Old PWD not set\n", exp)
                 return 0
         else:
             new_dir = exp.arguments[0]
@@ -112,20 +116,23 @@ class Shell:
             os.chdir(new_dir)
             self._old_pwd = tmp
         except FileNotFoundError as _:
-            self._error("%s: No such file or directory\n" % exp.arguments[0])
+            self._error("%s: No such file or directory\n" % exp.arguments[0], exp)
         return 0
     ...
     def _do_run(self,
                 exp : Expansion) -> int:
         cmd : str = exp.command
         if self._look_up(cmd) is not None:
-            if exp.file:
-                with open(exp.file, exp.access) as fd:
+            if exp.stdout_to:
+                with open(exp.stdout_to, exp.access) as fd:
                     subprocess.run([exp.command, *exp.arguments], stdout = fd)
+            elif exp.stderr_to:
+                with open(exp.stderr_to, exp.access) as fd:
+                    subprocess.run([exp.command, *exp.arguments], stderr = fd)
             else:
                 subprocess.run([exp.command, *exp.arguments])
         else:
-            self._error("%s: command not found\n" % cmd)
+            self._error("%s: command not found\n" % cmd, exp)
         return 0
     ...
     def _do_(self,
