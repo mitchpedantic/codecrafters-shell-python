@@ -122,7 +122,7 @@ class BaseHandler(Handler):
                     if self._last != ' ' and\
                         self._last != '1':
                         raise SyntaxError("syntax error near unexpected token `newline`\n")
-                    self.arg = ''
+                    self.arg = '' # necessary to handle the case of '1>'
                     self.ctx._access_redir = "w+"
                     return
                     ... # redirection
@@ -187,6 +187,7 @@ class DoubleQuoteHandler(Handler):
             self.arg += c
             ...
         _do()
-        self.last = c
+        # poor bug fix
+        self.last = c if self.last != '\\' else '\"'
         return
     ...
