@@ -7,9 +7,6 @@ from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
 from .module import (get_expansion, Expansion, SyntaxError)
 
-__old_pwd__ : str = None
-redirected : Optional[str] = None
-
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
@@ -122,7 +119,11 @@ class Shell:
                 exp : Expansion) -> int:
         cmd : str = exp.command
         if self._look_up(cmd) is not None:
-            subprocess.run([exp.command, *exp.arguments])
+            if exp.file:
+                with open(exp.file) as fd:
+                    subprocess.run([exp.command, *exp.arguments], stdout = fd)
+            else:
+                subprocess.run([exp.command, *exp.arguments])
         else:
             self._error("%s: command not found\n" % cmd)
         return 0
