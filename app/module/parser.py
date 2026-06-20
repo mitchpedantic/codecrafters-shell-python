@@ -29,6 +29,7 @@ def validate(path : str) -> NoReturn:
     if not os.path.exists(p):
         from pathlib import Path
         Path(p).mkdir(parents=True, exist_ok=True)
+        Path(path).touch()
         #raise DirectoryError(f"{path}: No such file or directory\n")
 
 class Expansion:
