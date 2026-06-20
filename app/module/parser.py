@@ -162,7 +162,7 @@ class SingleQuoteHandler(Handler):
             self.arg += c
             ...
         _do()
-        self.last = c
+        self.last = c if self.last != '\\' else '\''
         return
     ...
 
