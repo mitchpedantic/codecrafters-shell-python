@@ -5,7 +5,7 @@ import enum
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
-from .module import (get_expansion, Expansion, SyntaxError)
+from .module import (get_expansion, Expansion, SyntaxError, DirectoryError)
 
 class BuiltIn(str, enum.Enum):
     EXIT = "exit"
@@ -23,8 +23,8 @@ class Shell:
             )
             return\
                 self._do_(expanse.command)(expanse) if expanse.command else 0
-        except SyntaxError as syn:
-            self._error(syn)
+        except (SyntaxError, DirectoryError) as parsex:
+            self._error(str(parsex))
         except (EOFError, KeyboardInterrupt) as _:
             self._write("\n")
             return -1

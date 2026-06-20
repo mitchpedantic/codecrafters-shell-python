@@ -1,1 +1,1 @@
-from .parser import get_expansion, Expansion, SyntaxError
+from .parser import get_expansion, Expansion, SyntaxError, DirectoryError

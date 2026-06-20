@@ -1,8 +1,10 @@
 from __future__ import annotations
+import os
 import enum
 from typing import (Optional, NoReturn, override)
 
 class SyntaxError(Exception): ...
+class DirectoryError(Exception): ...
 
 def get_expansion(line : str) -> Expansion:
     splitter : Ctx = Ctx()
@@ -11,6 +13,9 @@ def get_expansion(line : str) -> Expansion:
         splitter.handle(c)
         ...
     ...
+    if splitter.file_redir:
+        validate(splitter.file_redir)
+    ...
     expansion = Expansion(
         splitter.args,
         splitter.policy_redir,
@@ -18,6 +23,11 @@ def get_expansion(line : str) -> Expansion:
     )
     ...
     return expansion
+
+def validate(path : str) -> NoReturn:
+    p, f = os.path.split(path)
+    if not os.path.exists(p):
+        raise DirectoryError(f"{path}: No such file or directory\n")
 
 class Expansion:
     @property
