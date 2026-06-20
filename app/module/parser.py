@@ -150,19 +150,10 @@ class SingleQuoteHandler(Handler):
     @override
     def do(self, c : str) -> NoReturn:
         def _do() -> NoReturn:
-            if self.last == '\\':
-                if c == '\'':
-                    self.arg += c
-                else:
-                    self.arg += (self.last + c)
-                return
-                ...
             if c == '\'': return self.ctx.to(BaseHandler(self.arg))
-            if c == '\\': return
             self.arg += c
             ...
         _do()
-        self.last = c if self.last != '\\' else '\''
         return
     ...
 
