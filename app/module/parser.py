@@ -25,9 +25,11 @@ def get_expansion(line : str) -> Expansion:
     return expansion
 
 def validate(path : str) -> NoReturn:
-    p, f = os.path.split(path)
+    p, _ = os.path.split(path)
     if not os.path.exists(p):
-        raise DirectoryError(f"{path}: No such file or directory\n")
+        from pathlib import Path
+        Path(p).mkdir(parents=True, exist_ok=True)
+        #raise DirectoryError(f"{path}: No such file or directory\n")
 
 class Expansion:
     @property
