@@ -120,7 +120,7 @@ class Shell:
         cmd : str = exp.command
         if self._look_up(cmd) is not None:
             if exp.file:
-                with open(exp.file) as fd:
+                with open(exp.file, exp.access) as fd:
                     subprocess.run([exp.command, *exp.arguments], stdout = fd)
             else:
                 subprocess.run([exp.command, *exp.arguments])
