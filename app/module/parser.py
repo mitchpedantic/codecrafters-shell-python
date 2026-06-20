@@ -121,7 +121,8 @@ class BaseHandler(Handler):
                 elif c == '>':
                     if self._last != ' ' and\
                         self._last != '1':
-                        raise SyntaxError("syntax error near unexpected token `newline`\n") 
+                        raise SyntaxError("syntax error near unexpected token `newline`\n")
+                    self.arg = ''
                     self.ctx._access_redir = "w+"
                     return
                     ... # redirection
