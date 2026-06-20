@@ -139,9 +139,9 @@ class BaseHandler(Handler):
                     ... # redirection
                 elif c == '>':
                     self.arg = '' # necessary to handle the case of '1>'
-                    if self._last != ' ' or self._last != '1':
+                    if self._last == ' ' or self._last == '1':
                         self.ctx._policy_redir = RedirectionPolicy.STDOUT_WRITE
-                    elif self._last != '2':
+                    elif self._last == '2':
                         self.ctx._policy_redir = RedirectionPolicy.STDERR_WRITE
                     else:
                         raise SyntaxError("syntax error near unexpected token `newline`\n")
