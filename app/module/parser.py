@@ -52,7 +52,8 @@ class Expansion:
         self._command : Optional[str] = args[0] if len(args) > 0 else None
         self._arguments : list[str] = args[1:]
         self._access : Optional[str] = None
-        if redirection is RedirectionPolicy.STDOUT_APPEND:
+        if redirection is RedirectionPolicy.STDOUT_APPEND or\
+            redirection is RedirectionPolicy.STDERR_APPEND:
             self._access = "a"
         elif redirection is RedirectionPolicy.STDERR_WRITE or\
              redirection is RedirectionPolicy.STDOUT_WRITE:
@@ -69,6 +70,7 @@ class RedirectionPolicy(enum.Enum):
     STDOUT_WRITE = enum.auto()
     STDOUT_APPEND = enum.auto()
     STDERR_WRITE = enum.auto()
+    STDERR_APPEND = enum.auto()
     ...
 
 class Ctx:
@@ -148,7 +150,10 @@ class BaseHandler(Handler):
                 if c == '\\': return
                 ...
                 if c == '>' and self.last == '>':
-                    self.ctx._policy_redir = RedirectionPolicy.STDOUT_APPEND
+                    if self.ctx._policy_redir is RedirectionPolicy.STDOUT_WRITE:
+                        self.ctx._policy_redir = RedirectionPolicy.STDOUT_APPEND
+                    else:
+                        self.ctx._policy_redir = RedirectionPolicy.STDERR_APPEND
                     return
                     ... # redirection
                 elif c == '>':
