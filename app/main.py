@@ -21,6 +21,8 @@ class Shell:
             expanse : Expansion = get_expansion(
                 input()
             )
+            if expanse.stderr_to:
+                b = open(expanse.stderr_to)
             return\
                 self._do_(expanse.command)(expanse) if expanse.command else 0
         except (SyntaxError, DirectoryError) as parsex:

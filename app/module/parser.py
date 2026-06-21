@@ -30,7 +30,6 @@ def validate(path : str) -> NoReturn:
     if not os.path.exists(p):
         plib.Path(p).mkdir(parents=True, exist_ok=True)
         plib.Path(path).touch(exist_ok=True)
-        open(path)
         #raise DirectoryError(f"{path}: No such file or directory\n")
     ...
 
