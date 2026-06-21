@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import enum
+import pathlib as plib
 from typing import (Optional, NoReturn, override)
 
 class SyntaxError(Exception): ...
@@ -27,10 +28,11 @@ def get_expansion(line : str) -> Expansion:
 def validate(path : str) -> NoReturn:
     p, _ = os.path.split(path)
     if not os.path.exists(p):
-        from pathlib import Path
-        Path(p).mkdir(parents=True, exist_ok=True)
-        Path(path).touch(exist_ok=True)
+        plib.Path(p).mkdir(parents=True, exist_ok=True)
+        plib.Path(path).touch(exist_ok=True)
+        open(path)
         #raise DirectoryError(f"{path}: No such file or directory\n")
+    ...
 
 class Expansion:
     @property
