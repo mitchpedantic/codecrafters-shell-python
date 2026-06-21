@@ -60,7 +60,8 @@ class Expansion:
             self._access = "w+"
         self._stderr_to : Optional[str] = None
         self._stdout_to : Optional[str] = None
-        if redirection is RedirectionPolicy.STDERR_WRITE:
+        if redirection is RedirectionPolicy.STDERR_WRITE or\
+            redirection is RedirectionPolicy.STDERR_APPEND:
             self._stderr_to = destination
         else:
             self._stdout_to = destination
