@@ -152,10 +152,21 @@ class Shell:
 
         }.get(request, self._do_run)
 
+def get_executables() -> list[str]:
+    executables = []
+    for directory in os.environ['PATH'].split(':'):
+        if not os.path.exists(directory) : continue
+        for item in os.listdir(directory):
+            full_path : str = os.path.join(directory, item)
+            if os.access(full_path, os.X_OK):
+                executables.append(item)
+    return executables
+
 def main() -> NoReturn:
     sh = Shell()
+    executables = get_executables()
     readline.set_completer(
-        lambda t, s: ([c + " " for c in BuiltIn if c.startswith(t)] + [None])[s]
+        lambda t, s: ([c + " " for c in executables + list(BuiltIn) if c.startswith(t)] + [None])[s]
     )
     readline.parse_and_bind("tab: complete")
     while (0 == sh.input()):
