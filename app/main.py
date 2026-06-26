@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import enum
+import readline
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
@@ -16,10 +17,9 @@ class BuiltIn(str, enum.Enum):
 
 class Shell:
     def input(self) -> int:
-        self._write("$ ")
         try:
             expanse : Expansion = get_expansion(
-                input()
+                input("$ ")
             )
             return\
                 self._do_(expanse.command)(expanse) if expanse.command else 0
@@ -80,19 +80,21 @@ class Shell:
     def _do_type(self,
                  exp : Expansion) -> int:
         message : str = ""
+        emessage : str = ""
         if len(exp.arguments) > 0:
             type_of : str = exp.arguments[0]
             if type_of in BuiltIn.__members__.values():
-                message = "%s is a shell builtin" % type_of
+                message = "%s is a shell builtin\n" % type_of
             else:
                 location : str = self._look_up(type_of) 
                 if location:
-                    message = "%s is %s" % (type_of, location)
+                    message = "%s is %s\n" % (type_of, location)
                 else:
-                    message = "%s: not found" % type_of
+                    emessage = "%s: not found\n" % type_of
                 ...
             ...
-        self._write(message + "\n", exp)
+        self._write(message, exp)
+        self._error(emessage, exp)
         return 0
     ...
     def _do_pwd(self,
@@ -151,7 +153,11 @@ class Shell:
         }.get(request, self._do_run)
 
 def main() -> NoReturn:
-    sh = Shell() 
+    sh = Shell()
+    readline.set_completer(
+        lambda t, s: ([c + " " for c in BuiltIn if c.startswith(t)] + [None])[s]
+    )
+    readline.parse_and_bind("tab: complete")
     while (0 == sh.input()):
         ...
     pass
