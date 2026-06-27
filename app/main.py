@@ -162,13 +162,28 @@ def get_executables() -> list[str]:
                 executables.append(item)
     return executables
 
+def to_completer() -> list[str]:
+    to_completer = []
+    splitted = readline.get_line_buffer().split()
+    if len(splitted) > 1:
+        partial = splitted[-1]
+        head, _ = os.path.split(partial)
+        if len(head) > 0 and os.path.isdir(head) and os.path.exists(head):
+            _, dir, files = next(os.walk(head))
+            ...
+        else:
+            _, dir, files = next(os.walk(os.path.curdir))
+        to_completer = [*dir, *files]
+    else:
+        to_completer.extend(get_executables())
+        to_completer.extend(list(BuiltIn))
+    return to_completer
+
+
 def main() -> NoReturn:
     sh = Shell()
-    executables = get_executables()
-    _, dir, files = next(os.walk(os.path.curdir))
-    current_dir = [*dir, *files]
     readline.set_completer(
-        lambda t, s: ([c + " " for c in executables + list(BuiltIn) + current_dir if c.startswith(t)] + [None])[s]
+        lambda t, s: ([c + " " for c in to_completer() if c.startswith(t)] + [None])[s]
     )
     readline.parse_and_bind("tab: complete")
     while (0 == sh.input()):
