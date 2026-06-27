@@ -165,8 +165,10 @@ def get_executables() -> list[str]:
 def main() -> NoReturn:
     sh = Shell()
     executables = get_executables()
+    _, dir, files = next(os.walk(os.path.curdir))
+    current_dir = [*dir, *files]
     readline.set_completer(
-        lambda t, s: ([c + " " for c in executables + list(BuiltIn) if c.startswith(t)] + [None])[s]
+        lambda t, s: ([c + " " for c in executables + list(BuiltIn) + current_dir if c.startswith(t)] + [None])[s]
     )
     readline.parse_and_bind("tab: complete")
     while (0 == sh.input()):
