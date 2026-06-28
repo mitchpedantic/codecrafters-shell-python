@@ -175,6 +175,7 @@ def to_completer(s, t) -> list[str]:
             to_completer.extend(list(BuiltIn))
         _, dir, files = next(os.walk(os.path.curdir))
         ...
+    dir = list(map(lambda d: d+"/", dir))
     to_completer.extend([*dir, *files])
     return to_completer
 
@@ -183,8 +184,7 @@ def wrap(input : list[str]) -> str:
         head, _ = os.path.split(readline.get_line_buffer().split()[-1])
         arg = input[0].rstrip()
         if os.path.isdir(os.path.join(head, arg)):
-            input[0].rstrip()
-            input[0] = arg + '/'
+            input[0] = arg
     return input
 
 def main() -> NoReturn:
