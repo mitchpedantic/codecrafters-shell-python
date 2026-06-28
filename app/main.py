@@ -164,21 +164,18 @@ def get_executables() -> list[str]:
 
 def to_completer(s, t) -> list[str]:
     to_completer = []
-    splitted = readline.get_line_buffer().split()
-    if len(splitted) > 1 or (len(splitted) == 1 and readline.get_line_buffer().endswith(" ")):
-        partial = splitted[-1]
-        head, _ = os.path.split(partial)
-        if len(head) > 0 and os.path.isdir(head) and os.path.exists(head) and not readline.get_line_buffer().endswith(" "):
-            _, dir, files = next(os.walk(head))
-            ...
-        else:
-            _, dir, files = next(os.walk(os.path.curdir))
-        to_completer = [*dir, *files]
+    buffer = readline.get_line_buffer()
+    head, _ = os.path.split(buffer.split()[-1])
+    if (not buffer.endswith(" ")) and len(head) > 0:
+        _, dir, files = next(os.walk(head))
+        ...
     else:
-        to_completer.extend(get_executables())
-        to_completer.extend(list(BuiltIn))
+        if len(buffer.split()) <= 1 and not buffer.endswith(" "):
+            to_completer.extend(get_executables())
+            to_completer.extend(list(BuiltIn))
         _, dir, files = next(os.walk(os.path.curdir))
-        to_completer = [*dir, *files]
+        ...
+    to_completer.extend([*dir, *files])
     return to_completer
 
 def wrap(input : list[str]) -> str:
