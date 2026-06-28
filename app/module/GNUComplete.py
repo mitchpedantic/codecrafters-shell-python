@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 
 from typing import (NoReturn, Callable, Optional)
-from .parser import Expansion
+from .parse_handler import Expansion
 
 class Flags(str, enum.Enum):
     LOWER_C = "-c"
@@ -21,6 +21,10 @@ class GNUComplete:
         self._emessage : str = ""
         self._gnu_complete = dict()
         ...
+    ...
+    def search(self,
+               key : str) -> Optional[str]:
+        return self._gnu_complete.get(key, None)
     ...
     def complete(self,
                  exp : Expansion = None) -> NoReturn:
@@ -48,11 +52,16 @@ class GNUComplete:
         ...
         _, exe, *_ = exp.arguments
         ...
-        completions : list[str] = self._gnu_complete.get(exe, list())
-        if not len(completions):
+        #completions : list[str] = self._gnu_complete.get(exe, list())
+        #if not len(completions):
+        #    self._emessage = "complete: %s: no completion specification\n" % exe
+        #for c in completions:
+        #    self._message += "complete %s %s\n" % ("-C '%s'" % c if len(c) else "-c", exe)
+        completion : list[str] = self._gnu_complete.get(exe, None)
+        if not completion:
             self._emessage = "complete: %s: no completion specification\n" % exe
-        for c in completions:
-            self._message += "complete %s %s\n" % ("-C '%s'" % c if len(c) else "-c", exe)
+        else:
+            self._message += "complete %s %s\n" % ("-C '%s'" % completion if len(completion) else "-c", exe)
         ...
     ...
     def _do_register_wout_path(self,
@@ -61,7 +70,8 @@ class GNUComplete:
             return self._invalid(exp)
         ...
         _, exe, *_ = exp.arguments
-        self._gnu_complete[exe] = self._gnu_complete.get(exe, set()) | set([""])
+        #self._gnu_complete[exe] = self._gnu_complete.get(exe, set()) | set([""])
+        self._gnu_complete[exe] = ""
         ...
         return 0
     ...
@@ -73,15 +83,17 @@ class GNUComplete:
             return self._help()
         ...
         _, path, exe, *_ = exp.arguments
-        self._gnu_complete[exe] = self._gnu_complete.get(exe, set()) | set([path])
+        #self._gnu_complete[exe] = self._gnu_complete.get(exe, set()) | set([path])
+        self._gnu_complete[exe] = path
         ...
         return 0
     ...
     def _do_display_all(self,
                         exp : Expansion) -> int:
         for k, vs in self._gnu_complete.items():
-            for v in vs:
-                self._message += "complete %s %s\n" % ("-C '%s'" % v if len(v) else "-c", k)
+            #for v in vs:
+            #    self._message += "complete %s %s\n" % ("-C '%s'" % v if len(v) else "-c", k)
+            self._message += "complete %s %s\n" % ("-C '%s'" % vs if len(vs) else "-c", k)
         ...
     ...
     def _invalid(self,

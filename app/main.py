@@ -6,18 +6,17 @@ import readline
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
-from .module import (get_expansion, Expansion, SyntaxError, DirectoryError, GNUComplete)
-
-class BuiltIn(str, enum.Enum):
-    COMPLETE = "complete"
-    EXIT = "exit"
-    ECHO = "echo"
-    TYPE = "type"
-    PWD = "pwd"
-    CD = "cd"
+from .module import (Expansion, SyntaxError, DirectoryError, GNUComplete, BuiltIn)
+from .module import (get_expansion, readline_setup)
 
 class Shell(object):
-    def input(self) -> int:
+    def run(self) -> NoReturn:
+        readline_setup(
+            complete_callback = self._complete_cmd.search
+        )
+        while (0 == self._input()): ...
+    ...
+    def _input(self) -> int:
         try:
             expanse : Expansion = get_expansion(
                 input("$ ")
@@ -162,51 +161,9 @@ class Shell(object):
 
         }.get(request, self._do_run)
 
-def get_executables() -> list[str]:
-    executables = []
-    for directory in os.environ['PATH'].split(':'):
-        if not os.path.exists(directory) : continue
-        for item in os.listdir(directory):
-            full_path : str = os.path.join(directory, item)
-            if os.access(full_path, os.X_OK):
-                executables.append(item)
-    return executables
-
-def to_completer(s, t) -> list[str]:
-    to_completer = []
-    buffer = readline.get_line_buffer()
-    head, _ = os.path.split(buffer.split()[-1])
-    if (not buffer.endswith(" ")) and len(head) > 0:
-        _, dir, files = next(os.walk(head))
-        ...
-    else:
-        if len(buffer.split()) <= 1 and not buffer.endswith(" "):
-            to_completer.extend(get_executables())
-            to_completer.extend(list(BuiltIn))
-        _, dir, files = next(os.walk(os.path.curdir))
-        ...
-    dir = list(map(lambda d: d+"/", dir))
-    to_completer.extend([*dir, *files])
-    return to_completer
-
-def wrap(input : list[str]) -> str:
-    if len(input) == 1:
-        head, _ = os.path.split(readline.get_line_buffer().split()[-1])
-        arg = input[0].rstrip()
-        if os.path.isdir(os.path.join(head, arg)):
-            input[0] = arg
-    return input
-
 def main() -> NoReturn:
-    sh = Shell()
-    delim = readline.get_completer_delims()
-    readline.set_completer_delims(delim[:delim.find("-")] + delim[delim.find("-")+1:])
-    readline.set_completer(
-        lambda t, s: ((wrap([c + " " for c in to_completer(s, t) if c.startswith(t)]) + [None])[s])
-    )
-    readline.parse_and_bind("tab: complete")
-    while (0 == sh.input()):
-        ...
+    Shell().run()
+    ...
     pass
 
 if __name__ == "__main__":
