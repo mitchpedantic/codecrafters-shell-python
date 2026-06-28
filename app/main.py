@@ -106,6 +106,18 @@ class Shell:
         )
         return 0
     ...
+    def _do_complete(self,
+                     exp : Expansion) -> int:
+        message : str = ""
+        emessage : str = ""
+        if len(exp.arguments) == 2:
+            flag, target = exp.arguments
+            if flag == "-p":
+                emessage = "complete: %s: no completion specification\n" % target
+        self._write(message, exp)
+        self._error(emessage, exp)
+        return 0
+    ...
     def _do_cd(self,
                exp : Expansion) -> int:
         new_dir : str = None
@@ -145,6 +157,7 @@ class Shell:
     def _do_(self,
              request : BuiltIn) -> Callable[[Expansion], int]:
         return {
+            BuiltIn.COMPLETE : self._do_complete,
             BuiltIn.EXIT : self._do_exit,
             BuiltIn.ECHO : self._do_echo,
             BuiltIn.TYPE : self._do_type,
