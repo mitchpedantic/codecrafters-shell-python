@@ -162,13 +162,13 @@ def get_executables() -> list[str]:
                 executables.append(item)
     return executables
 
-def to_completer() -> list[str]:
+def to_completer(s, t) -> list[str]:
     to_completer = []
     splitted = readline.get_line_buffer().split()
-    if len(splitted) > 1:
+    if len(splitted) > 1 or (len(splitted) == 1 and readline.get_line_buffer().endswith(" ")):
         partial = splitted[-1]
         head, _ = os.path.split(partial)
-        if len(head) > 0 and os.path.isdir(head) and os.path.exists(head):
+        if len(head) > 0 and os.path.isdir(head) and os.path.exists(head) and not readline.get_line_buffer().endswith(" "):
             _, dir, files = next(os.walk(head))
             ...
         else:
@@ -177,13 +177,25 @@ def to_completer() -> list[str]:
     else:
         to_completer.extend(get_executables())
         to_completer.extend(list(BuiltIn))
+        _, dir, files = next(os.walk(os.path.curdir))
+        to_completer = [*dir, *files]
     return to_completer
 
+def wrap(input : list[str]) -> str:
+    if len(input) == 1:
+        head, _ = os.path.split(readline.get_line_buffer().split()[-1])
+        arg = input[0].rstrip()
+        if os.path.isdir(os.path.join(head, arg)):
+            input[0].rstrip()
+            input[0] = arg + '/'
+    return input
 
 def main() -> NoReturn:
     sh = Shell()
+    delim = readline.get_completer_delims()
+    readline.set_completer_delims(delim[:delim.find("-")] + delim[delim.find("-")+1:])
     readline.set_completer(
-        lambda t, s: ([c + " " for c in to_completer() if c.startswith(t)] + [None])[s]
+        lambda t, s: ((wrap([c + " " for c in to_completer(s, t) if c.startswith(t)]) + [None])[s])
     )
     readline.parse_and_bind("tab: complete")
     while (0 == sh.input()):
