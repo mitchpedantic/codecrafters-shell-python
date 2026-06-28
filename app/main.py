@@ -9,6 +9,7 @@ from typing import (NoReturn, Callable, Optional)
 from .module import (get_expansion, Expansion, SyntaxError, DirectoryError)
 
 class BuiltIn(str, enum.Enum):
+    COMPLETE = "complete"
     EXIT = "exit"
     ECHO = "echo"
     TYPE = "type"
