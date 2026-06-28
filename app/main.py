@@ -6,7 +6,7 @@ import readline
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
-from .module import (get_expansion, Expansion, SyntaxError, DirectoryError)
+from .module import (get_expansion, Expansion, SyntaxError, DirectoryError, GNUComplete)
 
 class BuiltIn(str, enum.Enum):
     COMPLETE = "complete"
@@ -16,7 +16,7 @@ class BuiltIn(str, enum.Enum):
     PWD = "pwd"
     CD = "cd"
 
-class Shell:
+class Shell(object):
     def input(self) -> int:
         try:
             expanse : Expansion = get_expansion(
@@ -32,6 +32,7 @@ class Shell:
         ...
     def __init__(self):
         self._old_pwd : str = None
+        self._complete_cmd = GNUComplete()
         pass
     ...
     def _write(self,
@@ -108,14 +109,9 @@ class Shell:
     ...
     def _do_complete(self,
                      exp : Expansion) -> int:
-        message : str = ""
-        emessage : str = ""
-        if len(exp.arguments) == 2:
-            flag, target = exp.arguments
-            if flag == "-p":
-                emessage = "complete: %s: no completion specification\n" % target
-        self._write(message, exp)
-        self._error(emessage, exp)
+        self._complete_cmd.complete(exp)
+        self._write(self._complete_cmd.message, exp)
+        self._error(self._complete_cmd.emessage, exp)
         return 0
     ...
     def _do_cd(self,
