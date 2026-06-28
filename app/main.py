@@ -193,7 +193,7 @@ def wrap(input : list[str]) -> str:
 def main() -> NoReturn:
     sh = Shell()
     delim = readline.get_completer_delims()
-    readline.set_completer_delims(delim[:delim.find("-")] + delim[delim.find("-")+1:])
+    readline.set_completer_delims("`~!@#$%^&*()=+[{]}\\|;:'\",<>/?")
     readline.set_completer(
         lambda t, s: ((wrap([c + " " for c in to_completer(s, t) if c.startswith(t)]) + [None])[s])
     )
