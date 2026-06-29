@@ -53,9 +53,12 @@ class Completer:
         candidates = []
         args = buffer.split()
         nargs = len(args)
-        if nargs <= 3:
+        if nargs <= 3 and nargs > 0:
             if nargs < 3:
-                args.extend([""]*(3 - nargs))
+                if nargs == 1:
+                    args.extend([args[0], ""])
+                else:
+                    args.append(args[0])
             else:
                 args[1:] = args[:0:-1]
             script : Optional[str] = self._complete_callback(args[0])
