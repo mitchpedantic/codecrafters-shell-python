@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import readline
+import functools
 import subprocess
 
 from .shared import BuiltIn
@@ -22,21 +23,35 @@ def _setup_delims() -> NoReturn:
     readline.set_completer_delims(delim[:delim.find("-")] + delim[delim.find("-")+1:])
     ...
 
+def set_environ(func):
+    @functools.wraps(func)
+    def wrapoper_set_environ(instance : Completer, buffer : str) -> list[str]:
+        os.environ["COMP_LINE"] = buffer
+        os.environ["COMP_POINT"] = f"{len(buffer)}"
+        ...
+        return_list = func(instance, buffer)
+        ...
+        os.environ["COMP_LINE"] = ""
+        os.environ["COMP_POINT"] = ""
+        return return_list
+    return wrapoper_set_environ
+
 class Completer:
     def __init__(self,
                  complete_callback : Callable[[object], Optional[str]]):
         self._complete_callback = complete_callback
         pass
-
+    ...
     def _completer_logic(self, text : str, state : int) -> Optional[str]:
-        completed : str = self._try_run(text)
+        completed : str = self._try_run(readline.get_line_buffer())
         if completed: # non empty
             return [*completed, None][state]
         return ([c + (" " if not c.endswith("/") else "") for c in _general_lookups() if c.startswith(text)] + [None])[state]
-
-    def _try_run(self, text : str) -> list[str]:
+    ...
+    @set_environ
+    def _try_run(self, buffer : str) -> list[str]:
         candidates = []
-        args = readline.get_line_buffer().split()
+        args = buffer.split()
         nargs = len(args)
         if nargs <= 3:
             if nargs < 3:
@@ -48,7 +63,7 @@ class Completer:
                 candidates : list[str] = subprocess.run([script] + args, capture_output = True, text = True).stdout.splitlines()
                 candidates = map(lambda c: c + ("" if c.endswith("/") else " "), candidates)
         return candidates
-    
+
 def _general_lookups() -> list[str]:
     to_completer = []
     buffer = readline.get_line_buffer()
@@ -58,7 +73,7 @@ def _general_lookups() -> list[str]:
         ...
     else:
         if len(buffer.split()) <= 1 and not buffer.endswith(" "):
-            to_completer.extend(get_executables())
+            to_completer.extend(_get_executables())
             to_completer.extend(list(BuiltIn))
         _, dir, files = next(os.walk(os.path.curdir))
         ...
@@ -66,15 +81,7 @@ def _general_lookups() -> list[str]:
     to_completer.extend([*dir, *files])
     return to_completer
 
-def wrap(input : list[str]) -> str:
-    if len(input) == 1:
-        head, _ = os.path.split(readline.get_line_buffer().split()[-1])
-        arg = input[0].rstrip()
-        if os.path.isdir(os.path.join(head, arg)):
-            input[0] = arg
-    return input
-
-def get_executables() -> list[str]:
+def _get_executables() -> list[str]:
     executables = []
     for directory in os.environ['PATH'].split(':'):
         if not os.path.exists(directory) : continue
