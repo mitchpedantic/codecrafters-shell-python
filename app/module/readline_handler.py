@@ -38,10 +38,14 @@ class Completer:
         candidates = []
         args = readline.get_line_buffer().split()
         nargs = len(args)
-        if nargs == 1:
-            script : Optional[str] = self._complete_callback(*args)
+        if nargs <= 3:
+            if nargs < 3:
+                args.extend([""]*(3 - nargs))
+            else:
+                args[1:] = args[:0:-1]
+            script : Optional[str] = self._complete_callback(args[0])
             if script and os.path.isfile(script) and os.access(script, os.X_OK):
-                candidates : list[str] = subprocess.run([script], capture_output = True, text = True).stdout.splitlines()
+                candidates : list[str] = subprocess.run([script] + args, capture_output = True, text = True).stdout.splitlines()
                 candidates = map(lambda c: c + ("" if c.endswith("/") else " "), candidates)
         return candidates
     
