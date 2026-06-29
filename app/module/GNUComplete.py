@@ -9,6 +9,7 @@ class Flags(str, enum.Enum):
     LOWER_C = "-c"
     UPPER_C = "-C"
     LOWER_P = "-p"
+    LOWER_R = "-r"
 
 class GNUComplete:
     @property
@@ -43,7 +44,17 @@ class GNUComplete:
             Flags.LOWER_C : self._do_register_wout_path,
             Flags.UPPER_C : self._do_register_with_path,
             Flags.LOWER_P : self._do_display,
+            Flags.LOWER_R : self._do_remove
         }.get(flag, self._invalid)
+    ...
+    def _do_remove(self,
+                    exp : Expansion) -> int:
+        if len(exp.arguments) == 1:
+            self._gnu_complete.clear()
+        else:
+            for key in exp.arguments[1:]:
+                self._gnu_complete.pop(key)
+        ...
     ...
     def _do_display(self,
                     exp : Expansion) -> int:
