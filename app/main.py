@@ -30,6 +30,7 @@ class Shell(object):
             return -1
         ...
     def __init__(self):
+        self._jobs : list[subprocess.Popen] = list()
         self._old_pwd : str = None
         self._complete_cmd = GNUComplete()
         pass
@@ -100,10 +101,11 @@ class Shell(object):
     ...
     def _do_jobs(self,
                  exp : Expansion) -> int:
-        self._write(
-            "",
-            exp
-        )
+        for no, job in enumerate(self._jobs):
+            self._write(
+                "[%d]+ %-24s %s &\n" % (no + 1, "Running", " ".join(job.args)),
+                exp
+            )
         return 0
     ...
     def _do_pwd(self,
@@ -153,9 +155,9 @@ class Shell(object):
     def _handler_run(self,
                      exp : Expansion) -> NoReturn:
         if exp.background:
-            pid = subprocess.Popen([exp.command, *exp.arguments]).pid
+            self._jobs.append(subprocess.Popen([exp.command, *exp.arguments]))
             self._write(
-                f"[1] {pid}\n" ,
+                f"[1] {self._jobs[-1].pid}\n" ,
                 exp
             )
         elif exp.stdout_to:
