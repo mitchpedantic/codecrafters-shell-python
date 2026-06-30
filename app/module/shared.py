@@ -7,5 +7,6 @@ class BuiltIn(str, enum.Enum):
     EXIT = "exit"
     ECHO = "echo"
     TYPE = "type"
+    JOBS = "jobs"
     PWD = "pwd"
     CD = "cd"

@@ -98,6 +98,14 @@ class Shell(object):
         self._error(emessage, exp)
         return 0
     ...
+    def _do_jobs(self,
+                 exp : Expansion) -> int:
+        self._write(
+            "",
+            exp
+        )
+        return 0
+    ...
     def _do_pwd(self,
                  exp : Expansion) -> int:
         self._write(
@@ -156,6 +164,7 @@ class Shell(object):
             BuiltIn.EXIT : self._do_exit,
             BuiltIn.ECHO : self._do_echo,
             BuiltIn.TYPE : self._do_type,
+            BuiltIn.JOBS : self._do_jobs,
             BuiltIn.PWD  : self._do_pwd,
             BuiltIn.CD   : self._do_cd,
 
