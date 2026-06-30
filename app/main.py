@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import enum
-import readline
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
