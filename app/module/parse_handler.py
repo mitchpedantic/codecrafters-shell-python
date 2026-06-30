@@ -19,6 +19,7 @@ def get_expansion(line : str) -> Expansion:
     ...
     expansion = Expansion(
         splitter.args,
+        splitter.on_background,
         splitter.policy_redir,
         splitter.file_redir
     )
@@ -35,6 +36,8 @@ def validate(path : str) -> NoReturn:
 
 class Expansion:
     @property
+    def background(self) -> bool: return self._background
+    @property
     def command(self) -> Optional[str]: return self._command
     @property
     def arguments(self) -> list[str]: return self._arguments
@@ -47,9 +50,11 @@ class Expansion:
     ...
     def __init__(self,
                  args : list[str],
+                 background : bool,
                  redirection : Optional[RedirectionPolicy],
                  destination : Optional[str]):
         self._command : Optional[str] = args[0] if len(args) > 0 else None
+        self._background : bool = background
         self._arguments : list[str] = args[1:]
         self._access : Optional[str] = None
         if redirection is RedirectionPolicy.STDOUT_APPEND or\
@@ -83,9 +88,12 @@ class Ctx:
     def policy_redir(self) -> Optional[RedirectionPolicy]: return self._policy_redir 
     @property
     def file_redir(self) -> Optional[str]: return self._file_redir
+    @property
+    def on_background(self) -> bool: return self._on_bg
     ...
     def __init__(self):
         self._args : list[str] = []
+        self._on_bg : bool = False
         self._policy_redir : Optional[RedirectionPolicy] = None
         self._file_redir : Optional[str] = None
         self.to(BaseHandler())
@@ -175,6 +183,10 @@ class BaseHandler(Handler):
                         else:
                             self.ctx.args.append(self.arg)
                         self.arg = ''
+                    return
+                ... # background jobs
+                if c == '&':
+                    self.ctx._on_bg = True
                     return
                 ...
             self.arg += c

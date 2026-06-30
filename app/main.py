@@ -145,17 +145,28 @@ class Shell(object):
                 exp : Expansion) -> int:
         cmd : str = exp.command
         if self._look_up(cmd) is not None:
-            if exp.stdout_to:
-                with open(exp.stdout_to, exp.access) as fd:
-                    subprocess.run([exp.command, *exp.arguments], stdout = fd)
-            elif exp.stderr_to:
-                with open(exp.stderr_to, exp.access) as fd:
-                    subprocess.run([exp.command, *exp.arguments], stderr = fd)
-            else:
-                subprocess.run([exp.command, *exp.arguments])
+            self._handler_run(exp)
         else:
             self._error("%s: command not found\n" % cmd, exp)
         return 0
+    ...
+    def _handler_run(self,
+                     exp : Expansion) -> NoReturn:
+        if exp.background:
+            pid = subprocess.Popen([exp.command, *exp.arguments]).pid
+            self._write(
+                f"[1] {pid}\n" ,
+                exp
+            )
+        elif exp.stdout_to:
+            with open(exp.stdout_to, exp.access) as fd:
+                subprocess.run([exp.command, *exp.arguments], stdout = fd)
+        elif exp.stderr_to:
+            with open(exp.stderr_to, exp.access) as fd:
+                subprocess.run([exp.command, *exp.arguments], stderr = fd)
+        else:
+            subprocess.run([exp.command, *exp.arguments])
+        pass
     ...
     def _do_(self,
              request : BuiltIn) -> Callable[[Expansion], int]:
