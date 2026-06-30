@@ -18,6 +18,8 @@ class Shell(object):
     ...
     def _input(self) -> int:
         try:
+            for msg in self._job_handler.routine():
+                self._write(msg)
             expanse : Expansion = get_expansion(
                 input("$ ")
             )
