@@ -101,9 +101,15 @@ class Shell(object):
     ...
     def _do_jobs(self,
                  exp : Expansion) -> int:
+        jl : int = len(self._jobs)
         for no, job in enumerate(self._jobs):
+            no = no + 1
             self._write(
-                "[%d]+ %-24s %s &\n" % (no + 1, "Running", " ".join(job.args)),
+                "[%d]%s %-24s %s &\n" % (
+                    no,
+                    "+" if no == jl else "-" if no == (jl - 1) else " ",
+                    "Running",
+                    " ".join(job.args)),
                 exp
             )
         return 0
@@ -157,7 +163,7 @@ class Shell(object):
         if exp.background:
             self._jobs.append(subprocess.Popen([exp.command, *exp.arguments]))
             self._write(
-                f"[1] {self._jobs[-1].pid}\n" ,
+                f"[{len(self._jobs)}] {self._jobs[-1].pid}\n" ,
                 exp
             )
         elif exp.stdout_to:
