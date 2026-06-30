@@ -102,16 +102,22 @@ class Shell(object):
     def _do_jobs(self,
                  exp : Expansion) -> int:
         jl : int = len(self._jobs)
+        removal : list[int] = []
         for no, job in enumerate(self._jobs):
+            returncode = job.poll()
+            if returncode is not None:
+                removal.append(no)
             no = no + 1
             self._write(
-                "[%d]%s %-24s %s &\n" % (
+                "[%d]%s  %-21s%s\n" % (
                     no,
                     "+" if no == jl else "-" if no == (jl - 1) else " ",
-                    "Running",
-                    " ".join(job.args)),
+                    "Done" if returncode is not None else "Running",
+                    " ".join(job.args) + (" &" if returncode is None else "")),
                 exp
             )
+        while len(removal):
+            self._jobs.pop(removal.pop())
         return 0
     ...
     def _do_pwd(self,
