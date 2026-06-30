@@ -6,7 +6,7 @@ import readline
 import subprocess
 from sys import (stdout, stderr)
 from typing import (NoReturn, Callable, Optional)
-from .module import (Expansion, SyntaxError, DirectoryError, GNUComplete, BuiltIn)
+from .module import (Expansion, SyntaxError, DirectoryError, GNUComplete, BuiltIn, JobHandler)
 from .module import (get_expansion, readline_setup)
 
 class Shell(object):
@@ -30,9 +30,9 @@ class Shell(object):
             return -1
         ...
     def __init__(self):
-        self._jobs : list[subprocess.Popen] = list()
         self._old_pwd : str = None
         self._complete_cmd = GNUComplete()
+        self._job_handler = JobHandler()
         pass
     ...
     def _write(self,
@@ -101,23 +101,11 @@ class Shell(object):
     ...
     def _do_jobs(self,
                  exp : Expansion) -> int:
-        jl : int = len(self._jobs)
-        removal : list[int] = []
-        for no, job in enumerate(self._jobs):
-            returncode = job.poll()
-            if returncode is not None:
-                removal.append(no)
-            no = no + 1
+        for message in self._job_handler.iterate():
             self._write(
-                "[%d]%s  %-21s%s\n" % (
-                    no,
-                    "+" if no == jl else "-" if no == (jl - 1) else " ",
-                    "Done" if returncode is not None else "Running",
-                    " ".join(job.args) + (" &" if returncode is None else "")),
+                message,
                 exp
             )
-        while len(removal):
-            self._jobs.pop(removal.pop())
         return 0
     ...
     def _do_pwd(self,
@@ -167,9 +155,13 @@ class Shell(object):
     def _handler_run(self,
                      exp : Expansion) -> NoReturn:
         if exp.background:
-            self._jobs.append(subprocess.Popen([exp.command, *exp.arguments]))
+            index, pid = self._job_handler.add(
+                subprocess.Popen(
+                    [exp.command, *exp.arguments]
+                )
+            )
             self._write(
-                f"[{len(self._jobs)}] {self._jobs[-1].pid}\n" ,
+                f"[{index}] {pid}\n" ,
                 exp
             )
         elif exp.stdout_to:
