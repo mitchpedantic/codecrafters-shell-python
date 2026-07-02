@@ -7,24 +7,32 @@ from typing import (Optional, NoReturn, override)
 class SyntaxError(Exception): ...
 class DirectoryError(Exception): ...
 
-def get_expansion(line : str) -> Expansion:
-    splitter : Ctx = Ctx()
+def get_expansion(line : str) -> list[Expansion]:
+    commands : list[Expansion] = list()
     ...
-    for c in line + ' ':
-        splitter.handle(c)
+    current : int = 0
+    while current < len(line):
+        splitter : Ctx = Ctx()
         ...
+        for c in line[current:] + ' ':
+            current += 1
+            if splitter.handle(c):
+                break
+            ...
+        ...
+        if splitter.file_redir:
+            validate(splitter.file_redir)
+        ...
+        commands.append(
+            Expansion(
+                splitter.args,
+                splitter.on_background,
+                splitter.policy_redir,
+                splitter.file_redir
+            )
+        )
     ...
-    if splitter.file_redir:
-        validate(splitter.file_redir)
-    ...
-    expansion = Expansion(
-        splitter.args,
-        splitter.on_background,
-        splitter.policy_redir,
-        splitter.file_redir
-    )
-    ...
-    return expansion
+    return commands
 
 def validate(path : str) -> NoReturn:
     p, _ = os.path.split(path)
@@ -104,14 +112,14 @@ class Ctx:
         self._handler = handler
         self._handler.ctx = self
     ...
-    def handle(self, c : str) -> NoReturn:
-        self._handler.do(c)
+    def handle(self, c : str) -> int:
+        return self._handler.do(c)
 
 class Handler:
     """
     Handler class prototype. Gathers all the properties shared between implementations
     """
-    def do(self) -> NoReturn: ...
+    def do(self) -> int: ...
     ...
     @property
     def ctx(self) -> Ctx: return self._ctx
@@ -139,7 +147,7 @@ class BaseHandler(Handler):
     Implementation of the Handler for the base case (unquoted sentence).
     """
     @override
-    def do(self, c : str) -> NoReturn:
+    def do(self, c : str) -> int:
         """
         The base case handler shall:
          - check the last character
@@ -152,18 +160,22 @@ class BaseHandler(Handler):
             - when a blank is found, move the current string to the parsed arguments and reset the current string
          - save the last character found
         """
-        def _do() -> NoReturn:
+        def _do() -> int:
             if self.last != '\\':
-                if c == '\'': return self.ctx.to(SingleQuoteHandler(self.arg))
-                if c == '\"': return self.ctx.to(DoubleQuoteHandler(self.arg))
-                if c == '\\': return
+                if c == '\'': 
+                    self.ctx.to(SingleQuoteHandler(self.arg))
+                    return 0
+                if c == '\"': 
+                    self.ctx.to(DoubleQuoteHandler(self.arg))
+                    return 0
+                if c == '\\': return 0
                 ...
                 if c == '>' and self.last == '>':
                     if self.ctx._policy_redir is RedirectionPolicy.STDOUT_WRITE:
                         self.ctx._policy_redir = RedirectionPolicy.STDOUT_APPEND
                     else:
                         self.ctx._policy_redir = RedirectionPolicy.STDERR_APPEND
-                    return
+                    return 0
                     ... # redirection
                 elif c == '>':
                     self.arg = '' # necessary to handle the case of '1>'
@@ -173,7 +185,7 @@ class BaseHandler(Handler):
                         self.ctx._policy_redir = RedirectionPolicy.STDERR_WRITE
                     else:
                         raise SyntaxError("syntax error near unexpected token `newline`\n")
-                    return
+                    return 0
                     ... # redirection
                 ...
                 if c == ' ':
@@ -183,17 +195,20 @@ class BaseHandler(Handler):
                         else:
                             self.ctx.args.append(self.arg)
                         self.arg = ''
-                    return
+                    return 0
                 ... # background jobs
                 if c == '&':
                     self.ctx._on_bg = True
-                    return
+                    return 0
+                if c == '|':
+                    return -1
                 ...
             self.arg += c
             ...
-        _do()
+            return 0
+        returncode = _do()
         self.last = c
-        return
+        return returncode
     ...
 
 class SingleQuoteHandler(Handler):
@@ -201,13 +216,13 @@ class SingleQuoteHandler(Handler):
     Implementation of the Handler for the single quote case .
     """
     @override
-    def do(self, c : str) -> NoReturn:
+    def do(self, c : str) -> int:
         def _do() -> NoReturn:
             if c == '\'': return self.ctx.to(BaseHandler(self.arg))
             self.arg += c
             ...
         _do()
-        return
+        return 0
     ...
 
 
@@ -216,7 +231,7 @@ class DoubleQuoteHandler(Handler):
     Implementation of the Handler for the double quote case .
     """
     @override
-    def do(self, c : str) -> NoReturn:
+    def do(self, c : str) -> int:
         def _do() -> NoReturn:
             if self.last == '\\':
                 if c == '\"' or c == '\\':
@@ -233,5 +248,5 @@ class DoubleQuoteHandler(Handler):
         _do()
         # poor bug fix
         self.last = c if self.last != '\\' else '\"'
-        return
+        return 0
     ...

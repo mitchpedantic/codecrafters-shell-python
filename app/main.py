@@ -18,17 +18,46 @@ class Shell(object):
         try:
             for msg in self._job_handler.routine():
                 self._write(msg)
-            expanse : Expansion = get_expansion(
+            expansions : list[Expansion] = get_expansion(
                 input("$ ")
             )
-            return\
-                self._do_(expanse.command)(expanse) if expanse.command else 0
+            if len(expansions) > 1:
+                return self._pipe(expansions)
+            else :
+                expanse = expansions[0]
+                return\
+                    self._do_(expanse.command)(expanse) if expanse.command else 0
         except (SyntaxError, DirectoryError) as parsex:
             self._error(str(parsex))
         except (EOFError, KeyboardInterrupt) as _:
             self._write("\n")
             return -1
         ...
+    def _pipe(self, expansions : list[Expansion]) -> int:
+        """
+        TODO to be merged with run function. Consider creating a new module .py
+        """
+        processes_num = len(expansions)
+        processes_list = [None]*processes_num
+        ...
+        for i in range(0, processes_num - 1):
+            exp = expansions[i]
+            stdin = processes_list[i-1].stdout if processes_list[i-1] else None
+            processes_list[i + 1] =\
+                subprocess.Popen([exp.command, *exp.arguments], stdin=stdin, stdout=subprocess.PIPE)
+            ...
+        exp = expansions[-1]
+        stdin = processes_list[-1].stdout if processes_list[-1] else None
+        if exp.stdout_to:
+            with open(exp.stdout_to, exp.access) as fd:
+                subprocess.run([exp.command, *exp.arguments], stdin=stdin, stdout = fd)
+        elif exp.stderr_to:
+            with open(exp.stderr_to, exp.access) as fd:
+                subprocess.run([exp.command, *exp.arguments], stdin=stdin, stderr = fd)
+        else:
+            subprocess.run([exp.command, *exp.arguments], stdin=stdin)
+        return 0
+    ...
     def __init__(self):
         self._old_pwd : str = None
         self._complete_cmd = GNUComplete()
