@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import subprocess
 from sys import (stdout, stderr)
@@ -17,69 +18,97 @@ class Shell(object):
     def _input(self) -> int:
         try:
             for msg in self._job_handler.routine():
-                self._write(msg)
+                stdout.write(msg)
             expansions : list[Expansion] = get_expansion(
                 input("$ ")
             )
+            returncode = 0
             if len(expansions) > 1:
-                return self._pipe(expansions)
+                returncode = self._pipe(expansions)
             else :
+                returncode : int = 0
                 expanse = expansions[0]
-                return\
-                    self._do_(expanse.command)(expanse) if expanse.command else 0
+                returncode = self._do_(expanse.command)(expanse)
+                if expanse.command in BuiltIn:
+                    self._write_message(expanse)
+                    self._error_message(expanse)
+            return returncode
         except (SyntaxError, DirectoryError) as parsex:
-            self._error(str(parsex))
+            stderr.write(str(parsex))
         except (EOFError, KeyboardInterrupt) as _:
-            self._write("\n")
+            stdout.write("\n")
             return -1
         ...
     def _pipe(self, expansions : list[Expansion]) -> int:
         """
         TODO to be merged with run function. Consider creating a new module .py
-        """
+        """ 
+        def call_subprocess(inp : Optional[io.FileIO], out : Optional[io.FileIO], err : Optional[io.FileIO], args) -> subprocess.Popen:
+            if last_built_in:
+                proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=out, stderr=err)
+                proc.communicate(bytes(self._message, "utf-8"))
+                return proc
+            else:
+                return subprocess.Popen(args, stdin=inp, stdout=out, stderr=err)
+        ...
+        last_built_in = False
         processes_num = len(expansions)
         processes_list = [None]*processes_num
         ...
         for i in range(0, processes_num - 1):
             exp = expansions[i]
-            stdin = processes_list[i-1].stdout if processes_list[i-1] else None
-            processes_list[i + 1] =\
-                subprocess.Popen([exp.command, *exp.arguments], stdin=stdin, stdout=subprocess.PIPE)
+            if exp.command in BuiltIn:
+                last_built_in = True
+                self._do_(exp.command)(exp)
+                ...
+            else:
+                stdin = processes_list[i-1].stdout if processes_list[i-1] else None
+                processes_list[i + 1] = call_subprocess(stdin, subprocess.PIPE, None, [exp.command, *exp.arguments])
+                last_built_in = False
             ...
         exp = expansions[-1]
-        stdin = processes_list[-1].stdout if processes_list[-1] else None
-        if exp.stdout_to:
-            with open(exp.stdout_to, exp.access) as fd:
-                subprocess.run([exp.command, *exp.arguments], stdin=stdin, stdout = fd)
-        elif exp.stderr_to:
-            with open(exp.stderr_to, exp.access) as fd:
-                subprocess.run([exp.command, *exp.arguments], stdin=stdin, stderr = fd)
+        if exp.command in BuiltIn:
+            returncode = self._do_(exp.command)(exp)
+            self._write_message(exp)
+            self._error_message(exp)
+            return returncode
         else:
-            subprocess.run([exp.command, *exp.arguments], stdin=stdin)
+            stdin = processes_list[-1].stdout if processes_list[-1] else None
+            if exp.stdout_to:
+                with open(exp.stdout_to, exp.access) as fd:
+                    last = call_subprocess(stdin, fd, None, [exp.command, *exp.arguments])
+            elif exp.stderr_to:
+                with open(exp.stderr_to, exp.access) as fd:
+                    last = call_subprocess(stdin, None, fd, [exp.command, *exp.arguments])
+            else:
+                last = call_subprocess(stdin, None, None, [exp.command, *exp.arguments])
+            last.wait()
         return 0
     ...
     def __init__(self):
+        self._message : str = ""
+        self._emessage : str = ""
         self._old_pwd : str = None
         self._complete_cmd = GNUComplete()
         self._job_handler = JobHandler()
         pass
     ...
-    def _write(self,
-               message : str,
-               exp : Expansion = None) -> NoReturn:
+    def _write_message(self,
+                        exp : Expansion = None) -> NoReturn:
         if exp and exp.stdout_to:
-            with open(exp.stdout_to, exp.access) as f: f.write(message)
+            with open(exp.stdout_to, exp.access) as f: f.write(self._message)
         else:
-            stdout.write(message)
+            stdout.write(self._message)
+        self._message = ""
         pass
     ...
-    def _error(self,
-               message : str,
-               exp : Expansion = None) -> NoReturn:
+    def _error_message(self,
+                        exp : Expansion = None) -> NoReturn:
         if exp and exp.stderr_to:
-            with open(exp.stderr_to, exp.access) as f: f.write(message)
+            with open(exp.stderr_to, exp.access) as f: f.write(self._emessage)
         else:
-            stderr.write(message)
+            stderr.write(self._emessage)
+        self._emessage = ""
         pass
     ...
     def _look_up(self,
@@ -98,58 +127,42 @@ class Shell(object):
     ...
     def _do_echo(self,
                  exp : Expansion) -> int:
-        self._write(
-            " ".join(exp.arguments) + "\n",
-            exp
-        )
-        self._error(
-            "",
-            exp
-        )
+        self._message = " ".join(exp.arguments) + "\n"
+        self._emessage = ""
         return 0
     ...
     def _do_type(self,
                  exp : Expansion) -> int:
-        message : str = ""
-        emessage : str = ""
         if len(exp.arguments) > 0:
             type_of : str = exp.arguments[0]
             if type_of in BuiltIn.__members__.values():
-                message = "%s is a shell builtin\n" % type_of
+                self._message = "%s is a shell builtin\n" % type_of
             else:
                 location : str = self._look_up(type_of) 
                 if location:
-                    message = "%s is %s\n" % (type_of, location)
+                    self._message = "%s is %s\n" % (type_of, location)
                 else:
-                    emessage = "%s: not found\n" % type_of
+                    self._emessage = "%s: not found\n" % type_of
                 ...
             ...
-        self._write(message, exp)
-        self._error(emessage, exp)
         return 0
     ...
     def _do_jobs(self,
                  exp : Expansion) -> int:
         for message in self._job_handler.iterate():
-            self._write(
-                message,
-                exp
-            )
+            self._message += message
         return 0
     ...
     def _do_pwd(self,
                  exp : Expansion) -> int:
-        self._write(
-            os.getcwd() + "\n",
-            exp
-        )
+        self._message += os.getcwd() + "\n"
         return 0
     ...
     def _do_complete(self,
                      exp : Expansion) -> int:
         self._complete_cmd.complete(exp)
-        self._write(self._complete_cmd.message, exp)
-        self._error(self._complete_cmd.emessage, exp)
+        self._message = self._complete_cmd.message
+        self._emessage = self._complete_cmd.emessage
         return 0
     ...
     def _do_cd(self,
@@ -160,7 +173,7 @@ class Shell(object):
         elif exp.arguments[0] == "-":
             new_dir = self._old_pwd
             if new_dir is None:
-                self._error("Old PWD not set\n", exp)
+                self._emessage = "Old PWD not set\n"
                 return 0
         else:
             new_dir = exp.arguments[0]
@@ -169,7 +182,7 @@ class Shell(object):
             os.chdir(new_dir)
             self._old_pwd = tmp
         except FileNotFoundError as _:
-            self._error("%s: No such file or directory\n" % exp.arguments[0], exp)
+            self._emessage = "%s: No such file or directory\n" % exp.arguments[0]
         return 0
     ...
     def _do_run(self,
@@ -178,7 +191,8 @@ class Shell(object):
         if self._look_up(cmd) is not None:
             self._handler_run(exp)
         else:
-            self._error("%s: command not found\n" % cmd, exp)
+            self._emessage = "%s: command not found\n" % cmd
+            self._error_message(exp)
         return 0
     ...
     def _handler_run(self,
@@ -189,10 +203,8 @@ class Shell(object):
                     [exp.command, *exp.arguments]
                 )
             )
-            self._write(
-                f"[{index}] {pid}\n" ,
-                exp
-            )
+            self._message = f"[{index}] {pid}\n"
+            self._write_message(exp)
         elif exp.stdout_to:
             with open(exp.stdout_to, exp.access) as fd:
                 subprocess.run([exp.command, *exp.arguments], stdout = fd)
