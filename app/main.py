@@ -62,8 +62,8 @@ class Shell(object):
                 self._do_(exp.command)(exp)
                 ...
             else:
-                stdin = processes_list[i-1].stdout if processes_list[i-1] else None
-                processes_list[i + 1] = call_subprocess(stdin, subprocess.PIPE, None, [exp.command, *exp.arguments])
+                stdin = processes_list[i-1].stdout if i > 0 and processes_list[i-1] else None
+                processes_list[i] = call_subprocess(stdin, subprocess.PIPE, None, [exp.command, *exp.arguments])
                 last_built_in = False
             ...
         exp = expansions[-1]
@@ -73,7 +73,7 @@ class Shell(object):
             self._error_message(exp)
             return returncode
         else:
-            stdin = processes_list[-1].stdout if processes_list[-1] else None
+            stdin = processes_list[-2].stdout if processes_list[-2] else None
             if exp.stdout_to:
                 with open(exp.stdout_to, exp.access) as fd:
                     last = call_subprocess(stdin, fd, None, [exp.command, *exp.arguments])
