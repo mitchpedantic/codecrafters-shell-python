@@ -209,8 +209,8 @@ class Shell(object):
                         f.write(command + "\n")
                 return 0
             if exp.arguments[0] == "-a":
-                with open(exp.arguments[1], "w") as f:
-                    for command in self._history[self._last_append]:
+                with open(exp.arguments[1], "a") as f:
+                    for command in self._history[self._last_append:]:
                         f.write(command + "\n")
                         self._last_append += 1
                 return 0
