@@ -89,6 +89,7 @@ class Shell(object):
         return 0
     ...
     def __init__(self):
+        self._declares : dict = {}
         self._history : list[str] = []
         self._last_append : int = 0
         self._message : str = ""
@@ -225,6 +226,13 @@ class Shell(object):
     ...
     def _do_declare(self,
                 exp : Expansion) -> int:
+        if len(exp.arguments) > 0:
+            if exp.arguments[0] == "-p":
+                k = exp.arguments[1]
+                if name := self._declares.get(k):
+                    ...
+                else:
+                    self._emessage = "declare: %s: not found\n" % (k)
         return 0
     ...
     def _do_run(self,
