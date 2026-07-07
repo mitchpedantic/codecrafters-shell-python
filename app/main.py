@@ -185,6 +185,10 @@ class Shell(object):
             self._emessage = "%s: No such file or directory\n" % exp.arguments[0]
         return 0
     ...
+    def _do_history(self,
+                    exp : Expansion) -> int:
+        return 0
+    ...
     def _do_run(self,
                 exp : Expansion) -> int:
         cmd : str = exp.command
@@ -219,6 +223,7 @@ class Shell(object):
              request : BuiltIn) -> Callable[[Expansion], int]:
         return {
             BuiltIn.COMPLETE : self._do_complete,
+            BuiltIn.HISTORY : self._do_history,
             BuiltIn.EXIT : self._do_exit,
             BuiltIn.ECHO : self._do_echo,
             BuiltIn.TYPE : self._do_type,
