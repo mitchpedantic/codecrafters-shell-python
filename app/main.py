@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import string
 import io
 import os
 import subprocess
 from sys import (stdout, stderr)
-from typing import (NoReturn, Callable, Optional)
+from typing import (NoReturn, Callable, Optional, Final)
 from .module import (Expansion, SyntaxError, DirectoryError, GNUComplete, BuiltIn, JobHandler)
 from .module import (get_expansion, readline_setup)
+
+VALID_PRIMER : Final[set[str]] = set(string.ascii_letters + "_")
+INVALID : Final[set[str]] = set(string.printable) - set(string.digits) - VALID_PRIMER
 
 class Shell(object):
     def run(self) -> NoReturn:
@@ -235,7 +239,10 @@ class Shell(object):
                     self._emessage = "declare: %s: not found\n" % (k)
             elif len(exp.arguments[0].split("=")) == 2:
                 k, v = exp.arguments[0].split("=")
-                self._declares[k] = v
+                if k[0] in VALID_PRIMER and not len(INVALID.intersection(k[1:])):
+                    self._declares[k] = v
+                else:
+                    self._emessage = "declare: `%s': not a valid identifier\n" % (exp.arguments[0])
         return 0
     ...
     def _do_run(self,
