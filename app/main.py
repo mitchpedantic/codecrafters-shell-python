@@ -29,8 +29,12 @@ class Shell(object):
             ...
             for e in expansions:
                 if e.command == BuiltIn.DECLARE: continue
+                missing : list[int] = []
                 for i in range(len(e.arguments)):
                     e.arguments[i] = self._look_for_declares(e.arguments[i])
+                    if not e.arguments[i]: missing.append(i)
+                for mis in missing[::-1]:
+                    e.arguments.pop(mis)
             ...
             self._history.append(
                 " ".join([expansions[0].command, *expansions[0].arguments])
