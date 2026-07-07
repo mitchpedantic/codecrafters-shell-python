@@ -26,6 +26,15 @@ class Shell(object):
             expansions : list[Expansion] = get_expansion(
                 input("$ ")
             )
+            ...
+            for e in expansions:
+                if e.command == BuiltIn.DECLARE: continue
+                for i in range(len(e.arguments)):
+                    num = e.arguments[i].find("$")
+                    if num >= 0:
+                        e.arguments[i] = e.arguments[i][:num] +\
+                            self._declares.get(e.arguments[i][num:].removeprefix("$"), e.arguments[i][num:])
+            ...
             self._history.append(
                 " ".join([expansions[0].command, *expansions[0].arguments])
             )
