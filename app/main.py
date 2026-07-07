@@ -22,6 +22,9 @@ class Shell(object):
             expansions : list[Expansion] = get_expansion(
                 input("$ ")
             )
+            self._history.append(
+                " ".join([expansions[0].command, *expansions[0].arguments])
+            )
             returncode = 0
             if len(expansions) > 1:
                 returncode = self._pipe(expansions)
@@ -86,6 +89,7 @@ class Shell(object):
         return 0
     ...
     def __init__(self):
+        self._history : list[str] = []
         self._message : str = ""
         self._emessage : str = ""
         self._old_pwd : str = None
@@ -187,6 +191,8 @@ class Shell(object):
     ...
     def _do_history(self,
                     exp : Expansion) -> int:
+        for num, past in enumerate(self._history):
+            self._message += "    %d  %s\n" % (num + 1, past)
         return 0
     ...
     def _do_run(self,
