@@ -90,6 +90,7 @@ class Shell(object):
     ...
     def __init__(self):
         self._history : list[str] = []
+        self._last_append : int = 0
         self._message : str = ""
         self._emessage : str = ""
         self._old_pwd : str = None
@@ -202,11 +203,16 @@ class Shell(object):
                         self._history.append(line.removesuffix('\n'))
                 return 0
                 ...
-            if exp.arguments[0] == "-w" or exp.arguments[0] == "-a":
-                flag = exp.arguments[0].removeprefix("-")
-                with open(exp.arguments[1], flag) as f:
+            if exp.arguments[0] == "-w":
+                with open(exp.arguments[1], "w") as f:
                     for command in self._history:
                         f.write(command + "\n")
+                return 0
+            if exp.arguments[0] == "-a":
+                with open(exp.arguments[1], "w") as f:
+                    for command in self._history[self._last_append]:
+                        f.write(command + "\n")
+                        self._last_append += 1
                 return 0
             if exp.arguments[0].isdecimal():
                 n = int(exp.arguments[0])
