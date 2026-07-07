@@ -223,6 +223,10 @@ class Shell(object):
             self._message += "    %d  %s\n" % (num + 1, past)
         return 0
     ...
+    def _do_declare(self,
+                exp : Expansion) -> int:
+        return 0
+    ...
     def _do_run(self,
                 exp : Expansion) -> int:
         cmd : str = exp.command
@@ -258,6 +262,7 @@ class Shell(object):
         return {
             BuiltIn.COMPLETE : self._do_complete,
             BuiltIn.HISTORY : self._do_history,
+            BuiltIn.DECLARE : self._do_declare,
             BuiltIn.EXIT : self._do_exit,
             BuiltIn.ECHO : self._do_echo,
             BuiltIn.TYPE : self._do_type,

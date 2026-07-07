@@ -5,6 +5,7 @@ import enum
 class BuiltIn(str, enum.Enum):
     COMPLETE = "complete"
     HISTORY = "history"
+    DECLARE = "declare"
     EXIT = "exit"
     ECHO = "echo"
     TYPE = "type"
