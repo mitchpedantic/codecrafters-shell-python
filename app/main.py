@@ -191,7 +191,12 @@ class Shell(object):
     ...
     def _do_history(self,
                     exp : Expansion) -> int:
-        for num, past in enumerate(self._history):
+        last = len(self._history)
+        if len(exp.arguments) and int(exp.arguments[0]) <= last:
+            last -= int(exp.arguments[0])
+        else:
+            last = 0
+        for num, past in enumerate(self._history[last:], last):
             self._message += "    %d  %s\n" % (num + 1, past)
         return 0
     ...
