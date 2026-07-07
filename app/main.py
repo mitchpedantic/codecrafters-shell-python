@@ -101,6 +101,11 @@ class Shell(object):
             self._load_history(file)
         pass
     ...
+    def __del__(self):
+        if file := os.environ.get('HISTFILE'):
+            self._write_history(file)
+        pass
+    ...
     def _write_message(self,
                         exp : Expansion = None) -> NoReturn:
         if exp and exp.stdout_to:
@@ -202,9 +207,7 @@ class Shell(object):
                 return 0
                 ...
             if exp.arguments[0] == "-w":
-                with open(exp.arguments[1], "w") as f:
-                    for command in self._history:
-                        f.write(command + "\n")
+                self._write_history(exp.arguments[1])
                 return 0
             if exp.arguments[0] == "-a":
                 with open(exp.arguments[1], "a") as f:
@@ -269,6 +272,11 @@ class Shell(object):
             while line:= f.readline():
                 self._history.append(line.removesuffix('\n'))
             ...
+        return
+    def _write_history(self, file_path :str) -> NoReturn:
+        with open(file_path, "w") as f:
+                for command in self._history:
+                    f.write(command + "\n")
         return
     
 def main() -> NoReturn:
