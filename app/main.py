@@ -202,8 +202,9 @@ class Shell(object):
                         self._history.append(line.removesuffix('\n'))
                 return 0
                 ...
-            if exp.arguments[0] == "-w":
-                with open(exp.arguments[1], "w+") as f:
+            if exp.arguments[0] == "-w" or exp.arguments[0] == "-a":
+                flag = exp.arguments[0].removeprefix("-")
+                with open(exp.arguments[1], flag) as f:
                     for command in self._history:
                         f.write(command + "\n")
                 return 0
