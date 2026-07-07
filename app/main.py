@@ -191,11 +191,21 @@ class Shell(object):
     ...
     def _do_history(self,
                     exp : Expansion) -> int:
-        last = len(self._history)
-        if len(exp.arguments) and int(exp.arguments[0]) <= last:
-            last -= int(exp.arguments[0])
-        else:
-            last = 0
+        last = 0
+        if len(exp.arguments):
+            if exp.arguments[0] == "-r":
+                with open(exp.arguments[1], "r") as f:
+                    #i = 1
+                    #self._message += "    %d  %s\n" % (i, self._history[-1])
+                    #    i+=1
+                    while line:= f.readline():
+                        self._history.append(line.removesuffix('\n'))
+                return 0
+                ...
+            if exp.arguments[0].isdecimal():
+                n = int(exp.arguments[0])
+                last = (len(self._history) - n) if n < len(self._history) else 0
+                ...
         for num, past in enumerate(self._history[last:], last):
             self._message += "    %d  %s\n" % (num + 1, past)
         return 0
