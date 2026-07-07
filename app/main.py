@@ -96,6 +96,9 @@ class Shell(object):
         self._old_pwd : str = None
         self._complete_cmd = GNUComplete()
         self._job_handler = JobHandler()
+        ...
+        if file := os.environ.get('HISTFILE'):
+            self._load_history(file)
         pass
     ...
     def _write_message(self,
@@ -195,12 +198,7 @@ class Shell(object):
         last = 0
         if len(exp.arguments):
             if exp.arguments[0] == "-r":
-                with open(exp.arguments[1], "r") as f:
-                    #i = 1
-                    #self._message += "    %d  %s\n" % (i, self._history[-1])
-                    #    i+=1
-                    while line:= f.readline():
-                        self._history.append(line.removesuffix('\n'))
+                self._load_history(exp.arguments[1])
                 return 0
                 ...
             if exp.arguments[0] == "-w":
@@ -265,7 +263,14 @@ class Shell(object):
             BuiltIn.CD   : self._do_cd,
 
         }.get(request, self._do_run)
-
+    ...
+    def _load_history(self, file_path :str) -> NoReturn:
+        with open(file_path, "r") as f:
+            while line:= f.readline():
+                self._history.append(line.removesuffix('\n'))
+            ...
+        return
+    
 def main() -> NoReturn:
     Shell().run()
     ...
