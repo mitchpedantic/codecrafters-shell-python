@@ -202,6 +202,11 @@ class Shell(object):
                         self._history.append(line.removesuffix('\n'))
                 return 0
                 ...
+            if exp.arguments[0] == "-w":
+                with open(exp.arguments[1], "w+") as f:
+                    for command in self._history:
+                        f.write(command + "\n")
+                return 0
             if exp.arguments[0].isdecimal():
                 n = int(exp.arguments[0])
                 last = (len(self._history) - n) if n < len(self._history) else 0
