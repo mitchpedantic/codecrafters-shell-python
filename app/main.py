@@ -230,9 +230,12 @@ class Shell(object):
             if exp.arguments[0] == "-p":
                 k = exp.arguments[1]
                 if name := self._declares.get(k):
-                    ...
+                    self._message = "declare -- %s=\"%s\"\n" % (k, name)
                 else:
                     self._emessage = "declare: %s: not found\n" % (k)
+            elif len(exp.arguments[0].split("=")) == 2:
+                k, v = exp.arguments[0].split("=")
+                self._declares[k] = v
         return 0
     ...
     def _do_run(self,
