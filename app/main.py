@@ -30,10 +30,7 @@ class Shell(object):
             for e in expansions:
                 if e.command == BuiltIn.DECLARE: continue
                 for i in range(len(e.arguments)):
-                    num = e.arguments[i].find("$")
-                    if num >= 0:
-                        e.arguments[i] = e.arguments[i][:num] +\
-                            self._declares.get(e.arguments[i][num:].removeprefix("$"), e.arguments[i][num:])
+                    e.arguments[i] = self._look_for_declares(e.arguments[i])
             ...
             self._history.append(
                 " ".join([expansions[0].command, *expansions[0].arguments])
@@ -310,6 +307,27 @@ class Shell(object):
                 for command in self._history:
                     f.write(command + "\n")
         return
+    def _look_for_declares(self, line : str) -> NoReturn:
+        replacement = ""
+        stack : list[str] = []
+        variable : str = ""
+        for c in line:
+            if c not in ["$","{","}"]:
+                if len(stack):
+                    variable += c
+                    ...
+                else:
+                    replacement += c
+            else:
+                if c == "}":
+                    replacement += self._declares.get(variable, "")
+                    variable = ""
+                    stack.pop()
+                    stack.pop()
+                else:
+                    stack.append(c)
+        if variable: replacement += self._declares.get(variable, "")
+        return replacement
     
 def main() -> NoReturn:
     Shell().run()
